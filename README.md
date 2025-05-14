@@ -1,6 +1,6 @@
 # Text Based Adventure Game
 ### Description: 
-this is a short adventure game where you will have multiple options and paths to take resulting in different outcomes. For each choice you will be able to choose from 1 of 3 options. There is also two short minigames that can be played through different paths.
+This is a short adventure game where you will have multiple options and paths to take resulting in different outcomes. For each choice you will be able to choose from 1 of 3 options. There is also two short minigames that can be played through different paths.
 
 ## Usage and Settings: 
 1. This program is written in LC-3 assembly using the following LC-3 simulator https://github.com/chiragsakhuja/lc3tools/releases **_do to certain features of the program it may not work on other simulators_**.
