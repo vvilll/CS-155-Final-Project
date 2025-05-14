@@ -100,14 +100,6 @@ HALT
 *riddleWin      .FILL riddleWin
 *arcade1        .FILL arcade1 
 *arcade2        .FILL arcade2 
-*sltM1Pt1Str    .FILL sltM1Pt1Str
-*sltM1Pt2Str    .FILL sltM1Pt2Str
-*sltM2Pt1Str    .FILL sltM2Pt1Str
-*sltM2Pt2Str    .FILL sltM2Pt2Str
-*sltM3Pt1Str    .FILL sltM3Pt1Str
-*sltM3Pt2Str    .FILL sltM3Pt2Str
-*sltM4Pt1Str    .FILL sltM4Pt1Str
-*sltM4Pt2Str    .FILL sltM4Pt2Str
 *creditspt1     .FILL creditspt1
 *creditspt2     .FILL creditspt2
 
@@ -118,12 +110,42 @@ BOOL .BLKW #1
 luckSEED .BLKW #1
 
 
+;************************wait*****************************
+; Description: prompts user to press enter when ready to continue pauses program until this occurs
+;
+; Register Usage:
+; R0 - used for trap
+; R1 - not used
+; R2 - not used
+; R3 - not used
+; R4 - not used
+; R5 - not used
+; R6 - not used
+; R7 - not used
+;R7 - return address from subroutine
+;**************************************************************
+wait
+ST R7, save4R7
+ST R0, save4R0
+    ; pause the program until user presses a key
+    LEA R0, continue
+    PUTS
+    GETC
+
+LD R7, save4R7
+LD R0, save4R0
+RET
+save4R7 .BLKW #1
+save4R0 .BLKW #1
+continue .STRINGZ "Press Enter to continue: "
+
+
 ;************************getChoice*****************************
 ; Description: lets the user choice 1, 2 or 3 then displays the response that corresponds with the choice
 ;   
 ;
 ; Register Usage:
-; R0 - used for trap then holds the user choice value
+; R0 - used for trap then returns the user choice value
 ; R1 - used for calcs
 ; R2 - holds address for prompt if user enters 2
 ; R3 - holds address for prompt if user enters 2
@@ -134,6 +156,8 @@ luckSEED .BLKW #1
 ;**************************************************************
 getChoice
 ST R7, save0R7
+ST R1, save0R1
+ST R4, save0R4
 verifyLOOP
     IN
     LD R4, luckSEED
@@ -164,79 +188,12 @@ NEXT
 
 DONE
 LD R7, save0R7
+LD R1, save0R1
+LD R4, save0R4
 RET
 save0R7 .BLKW #1
-
-
-;************************riddlePath*****************************
-; Description: user enters a word up to length 10 it is then checked to see if it is equal to the key word
-;
-; Register Usage:
-; R0 - used for trap
-; R1 - return value if 1 if passed the riddle 0 if failed the riddle
-; R2 - used for calcs and address of keyword
-; R3 - address of user word
-; R4 - loop counter
-; R5 - character from user word
-; R6 - character from key word
-; R7 - not used
-;**************************************************************
-riddlePath
-ST R7, save1R7
-    AND R4, R4, #0 
-    ADD R4, R4, #10 ; set r4 to 10 used as loop counter
-    LEA R3, userWord ; sarting address of where user word is stored
-ridLOOP
-    GETC
-    OUT
-    STR R0, R3, #0 ; store the character into memory
-    ADD R3, R3, #1
-    AND R2, R2, #0
-    ADD R2, R0, #-10 ;check if user presses enter(10 is ascii for enter)
-    BRz wordEntered
-    ADD R4, R4, #-1 ; loop again if loop counter is positive
-    BRp ridLOOP
-    BR wordinputed
-wordEntered
-    ADD R3, R3, #-1 ; decrements address to replace the enter with null
-wordinputed
-    AND R0, R0, #0
-    STR R0, R3, #0 ; store null at the end of the string
-    
-    ;go through the word and check if it is == "keyboard"
-    LEA R3, userWord
-    LEA R2, keyWord
-    ADD R2, R2, #-1
-    ADD R3, R3, #-1
-    AND R4, R4, #0
-checkLOOP
-    ;increment userword and keyword address to compare
-    ADD R2, R2, #1 
-    ADD R3, R3, #1
-    
-    ;load value from user word into R5 and value from keyword into R6
-    LDR R5, R2, #0
-    LDR R6, R3, #0
-    ;compare character of keyword and userword
-    ADD R4, R4, #1
-    NOT R5, R5
-    ADD R5, R5, #1
-    ADD R0, R5, R6
-    BRz checkLOOP
-    
-    ;check how many successful loops of comparision occured if 12 the words are the same
-    AND R1, R1, #0
-    ADD R4, R4, #-12
-    BRnp fail
-    ADD R1, R1, #1
-fail
-    
-LD R7, save1R7
-RET
-save1R7 .BLKW #1
-userWord .BLKW #11
-keyWord .STRINGZ "keyboard"
-keyNULL .BLKW #2
+save0R1 .BLKW #1
+save0R4 .BLKW #1
 
 
 ;************************dispAracde*****************************
@@ -255,15 +212,18 @@ keyNULL .BLKW #2
 ;**************************************************************
 dispArcade
 ST R7, save1.5R7
+ST R0, save1.5R0
 ;goes through each slice of the arcade and displays
     LD R0, *arcade1
     PUTS
     LD R0, *arcade2
     PUTS
 LD R7, save1.5R7
+LD R0, save1.5R0
 RET
 arcOFF .FILL #20
 save1.5R7 .BLKW #1
+save1.5R0 .BLKW #1
 
 
 ;************************dispSlot*****************************
@@ -282,6 +242,10 @@ save1.5R7 .BLKW #1
 ;**************************************************************
 dispSlot
 ST R7, save2R7
+ST R0, save2R0
+ST R2, save2R2
+ST R4, save2R4
+ST R5, save2R5
     AND R2, R2, #0
     LD R0, BOOL
     LD R5, winLoopCount
@@ -310,11 +274,19 @@ LOOP
     BRp loopSLOT
 
 LD R7, save2R7
+LD R0, save2R0
+LD R2, save2R2
+LD R4, save2R4
+LD R5, save2R5
 RET
 winLoopCount .FILL #17
 amount .FILL #6000
 slotOFF .FILL #391
 save2R7 .BLKW #1
+save2R0 .BLKW #1
+save2R2 .BLKW #1
+save2R4 .BLKW #1
+save2R5 .BLKW #1
 
 
 ;************************genOutcome*****************************
@@ -324,8 +296,8 @@ save2R7 .BLKW #1
 ;
 ; Register Usage:
 ; R0 - not used
-; R1 - not used
-; R2 - not used
+; R1 - holds outcome generated using luckSeed and stores it back into luckSeed memory
+; R2 - stores value of luckseed
 ; R3 - not used
 ; R4 - not used
 ; R5 - not used
@@ -335,6 +307,8 @@ save2R7 .BLKW #1
 ;**************************************************************
 genOutcome
 ST R7, save3R7
+ST R1, save3R1
+ST R2, save3R2
     LD R2, luckSEED ; variable value based off users choices
 
 ; reduce by 3 until negative then increment by 3 once generating a value of 1-3
@@ -344,35 +318,12 @@ BRp calcLOOP
     ADD R1, R2, #3
     ST R1, luckSEED
 LD R7, save3R7
+LD R1, save3R1
+LD R2, save3R2
 RET
 save3R7 .BLKW #1
-
-
-;************************wait*****************************
-; Description: prompts user to press enter when ready to continue pauses program until this occurs
-;
-; Register Usage:
-; R0 - used for trap
-; R1 - not used
-; R2 - not used
-; R3 - not used
-; R4 - not used
-; R5 - not used
-; R6 - not used
-; R7 - not used
-;R7 - return address from subroutine
-;**************************************************************
-wait
-ST R7, save4R7
-    ; pause the program until user presses a key
-    LEA R0, continue
-    PUTS
-    GETC
-
-LD R7, save4R7
-RET
-continue .STRINGZ "Press Enter to continue: "
-save4R7 .BLKW #1
+save3R1 .BLKW #1
+save3R2 .BLKW #1
 
 
 ;************************finale*****************************
@@ -391,6 +342,10 @@ save4R7 .BLKW #1
 ;**************************************************************
 finale
 ST R7, save5R7
+ST R0, save5R0
+ST R1, save5R1
+ST R2, save5R2
+ST R3, save5R3
     LD R2, luckSEED
     ADD R0, R2, #-1
     BRnp NEXTOPT
@@ -458,13 +413,118 @@ NEXTOPT2
 THEEND
 JSR wait
 LD R7, save5R7
+LD R0, save5R0
+LD R1, save5R1
+LD R2, save5R2
+LD R3, save5R3
 RET
 save5R7 .BLKW #1
+save5R0 .BLKW #1
+save5R1 .BLKW #1
+save5R2 .BLKW #1
+save5R3 .BLKW #1
+
 *lose1Resp      .FILL lose1Resp
 *lose2Resp      .FILL lose2Resp
 *loseResp       .FILL loseResp
 *winResp        .FILL winResp
 *darkness       .FILL darkness
+*sltM1Pt1Str    .FILL sltM1Pt1Str
+*sltM1Pt2Str    .FILL sltM1Pt2Str
+*sltM2Pt1Str    .FILL sltM2Pt1Str
+*sltM2Pt2Str    .FILL sltM2Pt2Str
+*sltM3Pt1Str    .FILL sltM3Pt1Str
+*sltM3Pt2Str    .FILL sltM3Pt2Str
+*sltM4Pt1Str    .FILL sltM4Pt1Str
+*sltM4Pt2Str    .FILL sltM4Pt2Str
+
+;************************riddlePath*****************************
+; Description: user enters a word up to length 10 it is then checked to see if it is equal to the key word
+;
+; Register Usage:
+; R0 - used for trap
+; R1 - return value if 1 if passed the riddle 0 if failed the riddle
+; R2 - used for calcs and address of keyword
+; R3 - address of user word
+; R4 - loop counter
+; R5 - character from user word
+; R6 - character from key word
+; R7 - not used
+;**************************************************************
+riddlePath
+ST R7, save1R7
+ST R0, save1R0
+ST R2, save1R2
+ST R3, save1R3
+ST R4, save1R4
+ST R5, save1R5
+ST R6, save1R6
+    AND R4, R4, #0 
+    ADD R4, R4, #10 ; set r4 to 10 used as loop counter
+    LEA R3, userWord ; sarting address of where user word is stored
+ridLOOP
+    GETC
+    OUT
+    STR R0, R3, #0 ; store the character into memory
+    ADD R3, R3, #1
+    AND R2, R2, #0
+    ADD R2, R0, #-10 ;check if user presses enter(10 is ascii for enter)
+    BRz wordEntered
+    ADD R4, R4, #-1 ; loop again if loop counter is positive
+    BRp ridLOOP
+    BR wordinputed
+wordEntered
+    ADD R3, R3, #-1 ; decrements address to replace the enter with null
+wordinputed
+    AND R0, R0, #0
+    STR R0, R3, #0 ; store null at the end of the string
+    
+    ;go through the word and check if it is == "keyboard"
+    LEA R3, userWord
+    LEA R2, keyWord
+    ADD R2, R2, #-1
+    ADD R3, R3, #-1
+    AND R4, R4, #0
+checkLOOP
+    ;increment userword and keyword address to compare
+    ADD R2, R2, #1 
+    ADD R3, R3, #1
+    
+    ;load value from user word into R5 and value from keyword into R6
+    LDR R5, R2, #0
+    LDR R6, R3, #0
+    ;compare character of keyword and userword
+    ADD R4, R4, #1
+    NOT R5, R5
+    ADD R5, R5, #1
+    ADD R0, R5, R6
+    BRz checkLOOP
+    
+    ;check how many successful loops of comparision occured if 12 the words are the same
+    AND R1, R1, #0
+    ADD R4, R4, #-12
+    BRnp fail
+    ADD R1, R1, #1
+fail
+    
+LD R7, save1R7
+LD R0, save1R0
+LD R2, save1R2
+LD R3, save1R3
+LD R4, save1R4
+LD R5, save1R5
+LD R6, save1R6
+RET
+save1R7 .BLKW #1
+save1R0 .BLKW #1
+save1R2 .BLKW #1
+save1R3 .BLKW #1
+save1R4 .BLKW #1
+save1R5 .BLKW #1
+save1R6 .BLKW #1
+userWord .BLKW #11
+keyWord .STRINGZ "keyboard"
+keyNULL .BLKW #2
 
 
 waitdisp    .STRINGZ "\n.                                                           "
